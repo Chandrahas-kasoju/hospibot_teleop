@@ -2,7 +2,14 @@ var ros = null;
 var cmdVel = null;
 var isConnected = false;
 
-document.getElementById('connect-btn').addEventListener('click', function () {
+// UI Elements
+const connectBtn = document.getElementById('connect-btn');
+const statusText = document.getElementById('status-text');
+const statusDot = document.getElementById('status-dot');
+const cameraFeed = document.getElementById('camera-feed');
+const cameraPlaceholder = document.getElementById('camera-placeholder');
+
+connectBtn.addEventListener('click', function () {
     if (isConnected) {
         disconnect();
     } else {
@@ -10,8 +17,25 @@ document.getElementById('connect-btn').addEventListener('click', function () {
     }
 });
 
+function updateStatus(status, connected) {
+    statusText.innerText = status;
+    if (connected) {
+        statusDot.classList.add('connected');
+        connectBtn.innerText = "DISCONNECT";
+        connectBtn.classList.add('disconnect');
+        cameraFeed.style.display = 'block';
+        cameraPlaceholder.style.display = 'none';
+    } else {
+        statusDot.classList.remove('connected');
+        connectBtn.innerText = "CONNECT";
+        connectBtn.classList.remove('disconnect');
+        cameraFeed.style.display = 'none';
+        cameraPlaceholder.style.display = 'flex';
+    }
+}
+
 function connect() {
-    document.getElementById("status").innerHTML = "Connecting...";
+    statusText.innerText = "Connecting...";
 
     // Connect to ROS
     ros = new ROSLIB.Ros({
@@ -19,10 +43,8 @@ function connect() {
     });
 
     ros.on('connection', function () {
-        document.getElementById("status").innerHTML = "Connected";
-        document.getElementById("status").style.color = "#00ff00";
-        document.getElementById("connect-btn").innerText = "Disconnect";
-        document.getElementById("camera-feed").src = "/video_feed";
+        updateStatus("Connected", true);
+        cameraFeed.src = "/video_feed";
         isConnected = true;
         console.log('Connected to websocket server.');
 
@@ -35,16 +57,13 @@ function connect() {
     });
 
     ros.on('error', function (error) {
-        document.getElementById("status").innerHTML = "Error";
-        document.getElementById("status").style.color = "#ff0000";
+        updateStatus("Error", false);
         console.log('Error connecting to websocket server: ', error);
     });
 
     ros.on('close', function () {
-        document.getElementById("status").innerHTML = "Disconnected";
-        document.getElementById("status").style.color = "#ffff00";
-        document.getElementById("connect-btn").innerText = "Connect";
-        document.getElementById("camera-feed").src = "";
+        updateStatus("Disconnected", false);
+        cameraFeed.src = "";
         isConnected = false;
         console.log('Connection to websocket server closed.');
     });

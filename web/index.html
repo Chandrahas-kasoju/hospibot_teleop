@@ -6,53 +6,178 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Hospibot Teleop</title>
     <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --accent-color: #00ADB5;
+            --accent-hover: #007f85;
+            --danger-color: #ff4d4d;
+            --success-color: #00cc66;
+            --warning-color: #ffcc00;
+        }
+
         body,
         html {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             overflow: hidden;
-            background-color: #333;
-            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: var(--card-bg);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--accent-color);
+            letter-spacing: 1px;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* Status Indicator */
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--danger-color);
+            box-shadow: 0 0 5px var(--danger-color);
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+
+        .status-dot.connected {
+            background-color: var(--success-color);
+            box-shadow: 0 0 5px var(--success-color);
+        }
+
+        /* Connect Button */
+        #connect-btn {
+            background-color: var(--accent-color);
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            text-transform: uppercase;
+        }
+
+        #connect-btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        #connect-btn.disconnect {
+            background-color: var(--danger-color);
+        }
+
+        #connect-btn.disconnect:hover {
+            background-color: #cc0000;
+        }
+
+        /* Main Content */
+        main {
+            flex: 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
         }
 
         #video-container {
-            position: absolute;
-            top: 0;
-            left: 0;
+            position: relative;
             width: 100%;
             height: 100%;
-            z-index: 1;
+            max-width: 1280px;
+            max-height: 720px;
+            background-color: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
         #camera-feed {
-            max-width: 100%;
-            max-height: 100%;
+            width: 100%;
+            height: 100%;
             object-fit: contain;
+            display: none;
+            /* Hidden by default until connected */
         }
 
+        #camera-placeholder {
+            color: #555;
+            font-size: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Joystick */
         #joystick-zone {
             position: absolute;
-            bottom: 50px;
-            right: 50px;
+            bottom: 40px;
+            right: 40px;
             width: 150px;
             height: 150px;
-            z-index: 2;
+            z-index: 20;
+            /* Ensure joystick is usable on touch devices without selecting text */
+            user-select: none;
+            -webkit-user-select: none;
         }
 
-        #status {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            z-index: 3;
-            color: white;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 5px 10px;
-            border-radius: 5px;
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            header {
+                padding: 10px 15px;
+            }
+
+            h1 {
+                font-size: 1.2rem;
+            }
+
+            #joystick-zone {
+                bottom: 20px;
+                right: 20px;
+                width: 120px;
+                height: 120px;
+            }
+
+            main {
+                padding: 10px;
+            }
         }
     </style>
     <!-- Import libraries -->
@@ -62,12 +187,27 @@
 </head>
 
 <body>
-    <div id="status">Disconnected</div>
-    <button id="connect-btn"
-        style="position: absolute; top: 10px; right: 10px; z-index: 3; padding: 10px 20px; font-size: 16px; cursor: pointer;">Connect</button>
-    <div id="video-container">
-        <img id="camera-feed" src="" alt="Camera Feed">
-    </div>
+    <header>
+        <h1>HOSPIBOT</h1>
+        <div class="header-controls">
+            <div class="status-indicator">
+                <div id="status-dot" class="status-dot"></div>
+                <span id="status-text">Disconnected</span>
+            </div>
+            <button id="connect-btn">CONNECT</button>
+        </div>
+    </header>
+
+    <main>
+        <div id="video-container">
+            <div id="camera-placeholder">
+                <span>Camera Offline</span>
+                <small>Click Connect to start</small>
+            </div>
+            <img id="camera-feed" src="" alt="Camera Feed">
+        </div>
+    </main>
+
     <div id="joystick-zone"></div>
 
     <script src="main.js"></script>
