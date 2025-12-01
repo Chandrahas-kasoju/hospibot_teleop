@@ -4,7 +4,7 @@ var isConnected = false;
 
 // UI Elements
 const connectBtn = document.getElementById('connect-btn');
-const statusText = document.getElementById('status-text');
+// const statusText = document.getElementById('status-text'); // Removed
 const statusDot = document.getElementById('status-dot');
 const cameraFeed = document.getElementById('camera-feed');
 const cameraPlaceholder = document.getElementById('camera-placeholder');
@@ -18,16 +18,16 @@ connectBtn.addEventListener('click', function () {
 });
 
 function updateStatus(status, connected) {
-    statusText.innerText = status;
+    // statusText.innerText = status; // Element removed
     if (connected) {
         statusDot.classList.add('connected');
-        connectBtn.innerText = "DISCONNECT";
+        connectBtn.innerText = "TERMINATE";
         connectBtn.classList.add('disconnect');
         cameraFeed.style.display = 'block';
         cameraPlaceholder.style.display = 'none';
     } else {
         statusDot.classList.remove('connected');
-        connectBtn.innerText = "CONNECT";
+        connectBtn.innerText = "INITIATE";
         connectBtn.classList.remove('disconnect');
         cameraFeed.style.display = 'none';
         cameraPlaceholder.style.display = 'flex';
@@ -35,7 +35,7 @@ function updateStatus(status, connected) {
 }
 
 function connect() {
-    statusText.innerText = "Connecting...";
+    // statusText.innerText = "Connecting...";
 
     // Connect to ROS
     ros = new ROSLIB.Ros({
@@ -80,7 +80,8 @@ var joystickManager = nipplejs.create({
     zone: document.getElementById('joystick-zone'),
     mode: 'static',
     position: { left: '50%', top: '50%' },
-    color: 'blue'
+    color: '#00f3ff', // Neon Cyan
+    size: 200
 });
 
 var linear_speed = 0.0;
@@ -89,22 +90,12 @@ var max_linear = 0.5; // m/s
 var max_angular = 1.0; // rad/s
 
 joystickManager.on('move', function (evt, data) {
-    if (data && data.vector) {
-        // Nipple.js returns vector.y (up is positive) and vector.x (right is positive)
-        // We map y to linear.x and x to angular.z (negative because left turn is positive z)
-
+    if (data && data.vector && data.angle) {
         // Calculate speeds based on distance/force
         var force = Math.min(data.force, 1.0); // Cap force at 1.0
 
         // Simple mapping
-        // linear x: forward/backward
         linear_speed = Math.sin(data.angle.radian) * force * max_linear;
-
-        // angular z: left/right
-        // In ROS, positive Z is left turn. 
-        // In nipplejs, 0 is right, PI/2 is up, PI is left.
-        // cos(0) = 1 (right) -> should be -angular
-        // cos(PI) = -1 (left) -> should be +angular
         angular_speed = -Math.cos(data.angle.radian) * force * max_angular;
 
         publishCmdVel();
@@ -118,6 +109,8 @@ joystickManager.on('end', function () {
 });
 
 function publishCmdVel() {
+    if (!cmdVel) return; // Prevent publishing if not connected
+
     var twist = new ROSLIB.Message({
         linear: {
             x: linear_speed,

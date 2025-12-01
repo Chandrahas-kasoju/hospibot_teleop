@@ -5,16 +5,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Hospibot Teleop</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
+            --bg-color: #050505;
+            --panel-bg: rgba(10, 10, 10, 0.8);
             --text-color: #e0e0e0;
-            --accent-color: #00ADB5;
-            --accent-hover: #007f85;
-            --danger-color: #ff4d4d;
-            --success-color: #00cc66;
-            --warning-color: #ffcc00;
+            --accent-color: #00f3ff;
+            /* Neon Cyan */
+            --accent-glow: rgba(0, 243, 255, 0.6);
+            --danger-color: #ff003c;
+            --success-color: #00ff9d;
         }
 
         body,
@@ -25,10 +26,14 @@
             height: 100%;
             background-color: var(--bg-color);
             color: var(--text-color);
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Orbitron', sans-serif;
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            background-image:
+                linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
         }
 
         /* Header */
@@ -36,71 +41,112 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 20px;
-            background-color: var(--card-bg);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
-            z-index: 10;
+            padding: 15px 20px;
+            background: linear-gradient(90deg, transparent, var(--panel-bg), transparent);
+            border-bottom: 1px solid var(--accent-color);
+            box-shadow: 0 0 10px var(--accent-glow);
+            width: 100%;
+            box-sizing: border-box;
+            z-index: 200;
+            /* Ensure above everything */
+            flex-shrink: 0;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
         }
 
         h1 {
             margin: 0;
             font-size: 1.5rem;
             color: var(--accent-color);
-            letter-spacing: 1px;
+            text-shadow: 0 0 10px var(--accent-glow);
+            letter-spacing: 2px;
         }
 
         .header-controls {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 20px;
         }
 
         /* Status Indicator */
         .status-indicator {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
+            width: 12px;
+            height: 12px;
             background-color: var(--danger-color);
-            box-shadow: 0 0 5px var(--danger-color);
+            box-shadow: 0 0 8px var(--danger-color);
+            transform: rotate(45deg);
+            /* Diamond shape */
             transition: background-color 0.3s, box-shadow 0.3s;
         }
 
         .status-dot.connected {
             background-color: var(--success-color);
-            box-shadow: 0 0 5px var(--success-color);
+            box-shadow: 0 0 8px var(--success-color);
         }
 
         /* Connect Button */
         #connect-btn {
-            background-color: var(--accent-color);
-            color: #fff;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
+            background: transparent;
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
+            padding: 8px 20px;
+            font-family: 'Orbitron', sans-serif;
             font-size: 0.9rem;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: all 0.3s;
             text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 0 5px var(--accent-glow);
+            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
         }
 
         #connect-btn:hover {
-            background-color: var(--accent-hover);
+            background-color: var(--accent-color);
+            color: #000;
+            box-shadow: 0 0 20px var(--accent-glow);
         }
 
         #connect-btn.disconnect {
-            background-color: var(--danger-color);
+            color: var(--danger-color);
+            border-color: var(--danger-color);
+            box-shadow: 0 0 5px var(--danger-color);
         }
 
         #connect-btn.disconnect:hover {
-            background-color: #cc0000;
+            background-color: var(--danger-color);
+            color: #000;
+            box-shadow: 0 0 20px var(--danger-color);
+        }
+
+        /* HUD Overlay Container (Now only for decorative lines) */
+        .hud-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
         }
 
         /* Main Content */
@@ -108,75 +154,141 @@
             flex: 1;
             position: relative;
             display: flex;
+            flex-direction: column;
+            /* Stack video and joystick */
             justify-content: center;
             align-items: center;
+            overflow-y: auto;
+            /* Allow scrolling on small screens */
             padding: 20px;
+            gap: 30px;
+            /* Increased gap */
+            width: 100%;
+            box-sizing: border-box;
         }
 
         #video-container {
             position: relative;
-            width: 100%;
-            height: 100%;
-            max-width: 1280px;
-            max-height: 720px;
-            background-color: #000;
-            border-radius: 8px;
+            width: 80%;
+            max-width: 1000px;
+            aspect-ratio: 16 / 9;
+            background: radial-gradient(circle at center, #111 0%, #000 100%);
+            border: 2px solid var(--accent-color);
+            border-radius: 20px;
+            /* Curved edges */
+            box-shadow: 0 0 20px var(--accent-glow), inset 0 0 20px rgba(0, 0, 0, 0.8);
             overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
             display: flex;
             justify-content: center;
             align-items: center;
+            z-index: 10;
+            flex-shrink: 0;
+            /* Prevent video from shrinking too much */
         }
 
         #camera-feed {
             width: 100%;
             height: 100%;
-            object-fit: contain;
+            object-fit: cover;
             display: none;
-            /* Hidden by default until connected */
         }
 
         #camera-placeholder {
-            color: #555;
-            font-size: 1.2rem;
+            color: #333;
+            font-size: 1.5rem;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-align: center;
+        }
+
+        /* Decorative HUD Lines */
+        .hud-line {
+            position: absolute;
+            background-color: var(--accent-color);
+            box-shadow: 0 0 5px var(--accent-glow);
+            opacity: 0.5;
+        }
+
+        .hud-line.top-left {
+            top: 50px;
+            left: 20px;
+            width: 100px;
+            height: 2px;
+        }
+
+        .hud-line.top-right {
+            top: 50px;
+            right: 20px;
+            width: 100px;
+            height: 2px;
+        }
+
+        .hud-line.bottom-left {
+            bottom: 50px;
+            left: 20px;
+            width: 100px;
+            height: 2px;
+        }
+
+        .hud-line.bottom-right {
+            bottom: 50px;
+            right: 20px;
+            width: 100px;
+            height: 2px;
         }
 
         /* Joystick */
         #joystick-zone {
-            position: absolute;
-            bottom: 40px;
-            right: 40px;
-            width: 150px;
-            height: 150px;
-            z-index: 20;
-            /* Ensure joystick is usable on touch devices without selecting text */
+            position: relative;
+            width: 200px;
+            height: 200px;
+            z-index: 50;
             user-select: none;
             -webkit-user-select: none;
+            background: rgba(0, 243, 255, 0.05);
+            border-radius: 50%;
+            border: 1px dashed var(--accent-glow);
+            flex-shrink: 0;
+            /* Prevent joystick from squashing */
+            margin-bottom: 20px;
+            /* Ensure space at bottom */
         }
 
-        /* Responsive adjustments */
+        /* Mobile Responsiveness */
         @media (max-width: 768px) {
-            header {
-                padding: 10px 15px;
-            }
-
             h1 {
                 font-size: 1.2rem;
             }
 
-            #joystick-zone {
-                bottom: 20px;
-                right: 20px;
-                width: 120px;
-                height: 120px;
+            .header-controls {
+                gap: 10px;
+            }
+
+            #connect-btn {
+                padding: 8px 15px;
+                font-size: 0.8rem;
             }
 
             main {
                 padding: 10px;
+                gap: 20px;
+                justify-content: flex-start;
+                /* Start from top on mobile */
+            }
+
+            #video-container {
+                width: 95%;
+                /* Wider on mobile */
+                margin-top: 20px;
+            }
+
+            .hud-line {
+                display: none;
+                /* Hide decorative lines on mobile to save space */
             }
         }
     </style>
@@ -188,27 +300,35 @@
 
 <body>
     <header>
-        <h1>HOSPIBOT</h1>
-        <div class="header-controls">
+        <div class="header-left">
             <div class="status-indicator">
                 <div id="status-dot" class="status-dot"></div>
-                <span id="status-text">Disconnected</span>
             </div>
-            <button id="connect-btn">CONNECT</button>
+            <h1>HOSPIBOT</h1>
         </div>
+        <button id="connect-btn">INITIATE</button>
     </header>
+
+    <div class="hud-container">
+        <!-- Decorative HUD Elements -->
+        <div class="hud-line top-left"></div>
+        <div class="hud-line top-right"></div>
+        <div class="hud-line bottom-left"></div>
+        <div class="hud-line bottom-right"></div>
+    </div>
 
     <main>
         <div id="video-container">
             <div id="camera-placeholder">
-                <span>Camera Offline</span>
-                <small>Click Connect to start</small>
+                <span>System Standby</span>
+                <small>Initialize Connection</small>
             </div>
             <img id="camera-feed" src="" alt="Camera Feed">
         </div>
-    </main>
 
-    <div id="joystick-zone"></div>
+        <!-- Joystick Below Video -->
+        <div id="joystick-zone"></div>
+    </main>
 
     <script src="main.js"></script>
 </body>
